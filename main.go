@@ -5,20 +5,18 @@ import (
 	"log"
 	tgBot "telegramBot/bot"
 	"telegramBot/consumer"
-	"telegramBot/events/telegram"
+	telegram_storage "telegramBot/storage"
 	"telegramBot/storage/files"
 )
 
 const host = "api.telegram.org"
-
-const storage = "storage"
-
+const storageFolder = "storage"
 const batchSize = 100
 
 func main() {
 	bot := tgBot.NewBot(token(), host)
 
-	processor := telegram.NewTelegramProcessor(bot, files.NewFileStorage(storage))
+	processor := telegram_storage.NewStorageProcessor(bot, files.NewFileStorage(storageFolder))
 
 	log.Print("service started")
 

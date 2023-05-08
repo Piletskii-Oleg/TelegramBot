@@ -1,4 +1,4 @@
-package telegram
+package storage
 
 const msgHelp = `I can save and keep your pages, which you can retrieve later.
 To save the page, send me the link

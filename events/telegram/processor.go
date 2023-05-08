@@ -5,13 +5,16 @@ import (
 	"telegramBot/bot"
 	"telegramBot/bot/errors"
 	"telegramBot/events"
-	"telegramBot/storage"
 )
 
+type CmdProcessor interface {
+	Processor
+	DoCmd(event events.Event, meta Meta) error
+}
+
 type Processor struct {
-	bot     *bot.Bot
-	offset  int
-	storage storage.Storage
+	Bot    *bot.Bot
+	Offset int
 }
 
 type Meta struct {
@@ -24,14 +27,14 @@ var (
 	ErrUnknownMetaType  = errors2.New("unknown meta type")
 )
 
-func NewTelegramProcessor(bot *bot.Bot, storage storage.Storage) *Processor {
+func NewTelegramProcessor(bot *bot.Bot) *Processor {
 	return &Processor{
-		bot:     bot,
-		storage: storage}
+		Bot: bot,
+	}
 }
 
 func (p *Processor) Fetch(limit int) ([]events.Event, error) {
-	updates, err := p.bot.Updates(p.offset, limit)
+	updates, err := p.Bot.Updates(p.Offset, limit)
 	if err != nil {
 		return nil, errors.Wrap("can't get events", err)
 	}
@@ -45,40 +48,9 @@ func (p *Processor) Fetch(limit int) ([]events.Event, error) {
 		events = append(events, event(upd))
 	}
 
-	p.offset = updates[len(updates)-1].ID + 1
+	p.Offset = updates[len(updates)-1].ID + 1
 
 	return events, nil
-}
-
-func (p *Processor) Process(event events.Event) error {
-	switch event.Type {
-	case events.Message:
-		return p.processMessage(event)
-	default:
-		return errors.Wrap("unknown event type", ErrUnknownEventType)
-	}
-}
-
-func (p *Processor) processMessage(event events.Event) error {
-	meta, err := meta(event)
-	if err != nil {
-		return errors.Wrap("can't process message", err)
-	}
-
-	if err := p.doCmd(event.Text, meta.ChatID, meta.Username); err != nil {
-		return errors.Wrap("can't process message", err)
-	}
-
-	return nil
-}
-
-func meta(event events.Event) (Meta, error) {
-	result, ok := event.Meta.(Meta)
-	if !ok {
-		return Meta{}, errors.Wrap("unable to get meta", ErrUnknownMetaType)
-	}
-
-	return result, nil
 }
 
 func event(upd bot.Update) events.Event {

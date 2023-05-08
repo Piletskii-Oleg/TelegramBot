@@ -1,4 +1,4 @@
-package telegram
+package storage
 
 import (
 	errors2 "errors"
@@ -7,7 +7,8 @@ import (
 	"strings"
 	"telegramBot/bot"
 	"telegramBot/bot/errors"
-	"telegramBot/storage"
+	"telegramBot/events"
+	"telegramBot/events/telegram"
 	"time"
 )
 
@@ -16,6 +17,31 @@ const (
 	HelpCmd  = "/help"
 	StartCmd = "/start"
 )
+
+func (p *Processor) DoCmd(event events.Event, meta telegram.Meta) error {
+	text := event.Text
+	text = strings.TrimSpace(text)
+
+	username := meta.Username
+	chatID := meta.ChatID
+
+	log.Printf("got command '%s' from '%s'", text, username)
+
+	if isAddCmd(text) {
+		return p.savePage(chatID, text, username)
+	}
+
+	switch text {
+	case RndCmd:
+		return p.sendRandom(chatID, username)
+	case HelpCmd:
+		return p.sendHelp(chatID)
+	case StartCmd:
+		return p.sendHello(chatID)
+	default:
+		return p.Processor.Bot.SendMessage(chatID, msgUnknownCommand)
+	}
+}
 
 func (p *Processor) doCmd(text string, chatID int, username string) error {
 	text = strings.TrimSpace(text)
@@ -34,7 +60,7 @@ func (p *Processor) doCmd(text string, chatID int, username string) error {
 	case StartCmd:
 		return p.sendHello(chatID)
 	default:
-		return p.bot.SendMessage(chatID, msgUnknownCommand)
+		return p.Processor.Bot.SendMessage(chatID, msgUnknownCommand)
 	}
 }
 
@@ -43,9 +69,9 @@ func (p *Processor) savePage(chatID int, pageURL string, username string) (err e
 		err = errors.WrapIfError("can't do command: save page", err)
 	}()
 
-	sendMsg := NewMessageSender(chatID, p.bot)
+	sendMsg := NewMessageSender(chatID, p.Bot)
 
-	page := &storage.Page{
+	page := &Page{
 		URL:      pageURL,
 		Username: username,
 		Created:  time.Now(),
@@ -75,13 +101,13 @@ func (p *Processor) sendRandom(chatID int, username string) (err error) {
 		err = errors.WrapIfError("can't do command: save page", err)
 	}()
 
-	sendMsg := NewMessageSender(chatID, p.bot)
+	sendMsg := NewMessageSender(chatID, p.Processor.Bot)
 
 	page, err := p.storage.PickRandom(username)
-	if err != nil && !errors2.Is(err, storage.ErrNoSavedPages) {
+	if err != nil && !errors2.Is(err, ErrNoSavedPages) {
 		return err
 	}
-	if errors2.Is(err, storage.ErrNoSavedPages) {
+	if errors2.Is(err, ErrNoSavedPages) {
 		return sendMsg(msgNoSavedPages)
 	}
 
@@ -93,11 +119,11 @@ func (p *Processor) sendRandom(chatID int, username string) (err error) {
 }
 
 func (p *Processor) sendHelp(chatID int) error {
-	return p.bot.SendMessage(chatID, msgHelp)
+	return p.Processor.Bot.SendMessage(chatID, msgHelp)
 }
 
 func (p *Processor) sendHello(chatID int) error {
-	return p.bot.SendMessage(chatID, msgHello)
+	return p.Processor.Bot.SendMessage(chatID, msgHello)
 }
 
 func NewMessageSender(chatID int, bot *bot.Bot) func(string) error {
