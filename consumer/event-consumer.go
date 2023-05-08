@@ -34,7 +34,6 @@ func (c *EventConsumer) Start() error {
 
 			continue
 		}
-
 	}
 }
 

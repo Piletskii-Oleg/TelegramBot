@@ -43,14 +43,14 @@ func (p *Processor) Fetch(limit int) ([]events.Event, error) {
 		return nil, nil
 	}
 
-	events := make([]events.Event, 0, len(updates))
+	receivedEvents := make([]events.Event, 0, len(updates))
 	for _, upd := range updates {
-		events = append(events, event(upd))
+		receivedEvents = append(receivedEvents, event(upd))
 	}
 
 	p.Offset = updates[len(updates)-1].ID + 1
 
-	return events, nil
+	return receivedEvents, nil
 }
 
 func event(upd bot.Update) events.Event {

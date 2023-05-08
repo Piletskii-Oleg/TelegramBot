@@ -43,27 +43,6 @@ func (p *Processor) DoCmd(event events.Event, meta telegram.Meta) error {
 	}
 }
 
-func (p *Processor) doCmd(text string, chatID int, username string) error {
-	text = strings.TrimSpace(text)
-
-	log.Printf("got command '%s' from '%s'", text, username)
-
-	if isAddCmd(text) {
-		return p.savePage(chatID, text, username)
-	}
-
-	switch text {
-	case RndCmd:
-		return p.sendRandom(chatID, username)
-	case HelpCmd:
-		return p.sendHelp(chatID)
-	case StartCmd:
-		return p.sendHello(chatID)
-	default:
-		return p.Processor.Bot.SendMessage(chatID, msgUnknownCommand)
-	}
-}
-
 func (p *Processor) savePage(chatID int, pageURL string, username string) (err error) {
 	defer func() {
 		err = errors.WrapIfError("can't do command: save page", err)
