@@ -38,7 +38,7 @@ func (c *Client) MakeRequest(location string) (*Response, error) {
 	values.Add("lat", strconv.FormatFloat(geo[0].Latitude, 'f', -1, 64))
 	values.Add("lon", strconv.FormatFloat(geo[0].Longitude, 'f', -1, 64))
 	values.Add("appid", c.token)
-	//values.Add("units", "metric")
+	values.Add("units", "metric")
 
 	apiUrl := url.URL{
 		Scheme: "https",

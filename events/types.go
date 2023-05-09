@@ -5,6 +5,7 @@ const (
 	Message
 	AskForLocation
 	ReceiveLocation
+	AskForPersistentLocation
 )
 
 type Fetcher interface {

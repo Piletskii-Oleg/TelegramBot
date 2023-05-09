@@ -4,18 +4,18 @@ import (
 	"log"
 	"strings"
 	"telegramBot/events"
-	"telegramBot/weather"
-	"time"
 )
 
 const (
-	hello    = "Hello"
-	help     = "help"
-	location = "location"
+	hello        = "hello"
+	help         = "help"
+	location     = "new location"
+	saveLocation = "save location"
+	savedInfo    = "show saved"
 )
 
 var (
-	defaultButtons  = []string{"location", "hello", "help"}
+	defaultButtons  = []string{location, help, saveLocation, savedInfo}
 	locationButtons = []string{"Moscow", "Saint Petersburg", "Novosibirsk"}
 )
 
@@ -35,6 +35,10 @@ func (p *Processor) DoCmd(event events.Event, meta Meta) error {
 		return p.sendHelp(chatID)
 	case hello:
 		return p.sendHello(chatID)
+	case saveLocation:
+		return p.requestLocation(chatID)
+	case savedInfo:
+		return p.sendSavedLocationInfo(chatID)
 	default:
 		return p.Processor.Bot.SendMessage(chatID, msgUnknownCommand, defaultButtons)
 	}
@@ -44,14 +48,26 @@ func (p *Processor) requestLocation(chatID int) error {
 	return p.Processor.Bot.SendMessage(chatID, msgEnterLocation, locationButtons)
 }
 
-func (p *Processor) sendLocationInfo(response weather.Response, chatID int) error {
-	return p.Processor.Bot.SendMessage(chatID, time.Unix(response.Time, 0).String(), defaultButtons)
-}
-
 func (p *Processor) sendHelp(chatID int) error {
 	return p.Processor.Bot.SendMessage(chatID, msgHelp, defaultButtons)
 }
 
 func (p *Processor) sendHello(chatID int) error {
 	return p.Processor.Bot.SendMessage(chatID, msgHello, defaultButtons)
+}
+
+func (p *Processor) confirmSaveLocation(chatID int) error {
+	return p.Processor.Bot.SendMessage(chatID, msgSavedLocation, defaultButtons)
+}
+
+func (p *Processor) sendSavedLocationInfo(chatID int) error {
+	if p.SavedLocation == "" {
+		return p.Processor.Bot.SendMessage(chatID, msgNoSavedLocation, defaultButtons)
+	}
+	response, err := p.weather.MakeRequest(p.SavedLocation)
+	if err != nil {
+		return err
+	}
+
+	return p.sendLocationInfo(response, chatID)
 }

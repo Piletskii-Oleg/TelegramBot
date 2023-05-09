@@ -6,38 +6,57 @@ import (
 	"telegramBot/events"
 	"telegramBot/events/telegram"
 	"telegramBot/weather"
+	"time"
 )
 
 type Processor struct {
 	*telegram.Processor
-	weather          weather.Client
-	AskedForLocation bool
+	weather       weather.Client
+	States        States
+	SavedLocation string
+}
+
+type States struct {
+	AskedForLocation           bool
+	AskedForPersistentLocation bool
 }
 
 type Meta struct {
-	ChatID           int
-	Username         string
-	AskedForLocation bool
+	ChatID   int
+	Username string
 }
 
 func NewWeatherProcessor(bot *bot.Bot, weather weather.Client) *Processor {
-	return &Processor{Processor: telegram.NewTelegramProcessor(bot), weather: weather}
+	return &Processor{
+		Processor: telegram.NewTelegramProcessor(bot),
+		weather:   weather,
+		States: States{
+			AskedForLocation:           false,
+			AskedForPersistentLocation: false,
+		},
+	}
 }
 
 func (p *Processor) Process(event events.Event) error {
 	switch event.Type {
 	case events.Message:
-		if p.AskedForLocation {
-			p.AskedForLocation = false
+		if p.States.AskedForLocation {
+			p.States.AskedForLocation = false
 			return p.processLocation(event)
+		} else if p.States.AskedForPersistentLocation {
+			p.States.AskedForPersistentLocation = false
+			return p.saveLocation(event)
 		} else {
 			return p.processMessage(event)
 		}
 	case events.AskForLocation:
-		p.AskedForLocation = true
+		p.States.AskedForLocation = true
 		return p.processMessage(event)
 	case events.ReceiveLocation:
 		return p.processLocation(event)
+	case events.AskForPersistentLocation:
+		p.States.AskedForPersistentLocation = true
+		return p.processMessage(event)
 	default:
 		return errors.Wrap("unknown event type", telegram.ErrUnknownEventType)
 	}
@@ -62,12 +81,33 @@ func (p *Processor) processLocation(event events.Event) error {
 		return errors.Wrap("can't process message", err)
 	}
 
-	response, err := p.weather.MakeRequest(event.Text)
+	locationName := event.Text
+
+	response, err := p.weather.MakeRequest(locationName)
 	if err != nil {
 		return errors.Wrap("can't make weather request", err)
 	}
 
-	if err := p.sendLocationInfo(*response, meta.ChatID); err != nil {
+	if err := p.sendLocationInfo(response, meta.ChatID); err != nil {
+		return errors.Wrap("can't process location", err)
+	}
+
+	return err
+}
+
+func (p *Processor) sendLocationInfo(response *weather.Response, chatID int) error {
+	return p.Processor.Bot.SendMessage(chatID, time.Unix(response.Time, 0).String(), defaultButtons)
+}
+
+func (p *Processor) saveLocation(event events.Event) error {
+	p.SavedLocation = event.Text
+
+	meta, err := meta(event)
+	if err != nil {
+		return errors.Wrap("can't process message", err)
+	}
+
+	if err := p.confirmSaveLocation(meta.ChatID); err != nil {
 		return errors.Wrap("can't process location", err)
 	}
 
@@ -110,17 +150,10 @@ func event(upd bot.Update) events.Event {
 		Text: fetchText(upd),
 	}
 
-	if updateType == events.AskForLocation {
+	if updateType != events.Unknown {
 		res.Meta = Meta{
-			ChatID:           upd.Message.Chat.ID,
-			Username:         upd.Message.From.Username,
-			AskedForLocation: true,
-		}
-	} else if updateType != events.Unknown {
-		res.Meta = Meta{
-			ChatID:           upd.Message.Chat.ID,
-			Username:         upd.Message.From.Username,
-			AskedForLocation: false,
+			ChatID:   upd.Message.Chat.ID,
+			Username: upd.Message.From.Username,
 		}
 	}
 
@@ -137,8 +170,10 @@ func fetchText(upd bot.Update) string {
 func fetchType(upd bot.Update) events.Type {
 	if upd.Message == nil {
 		return events.Unknown
-	} else if upd.Message.Text == "location" {
+	} else if upd.Message.Text == location {
 		return events.AskForLocation
+	} else if upd.Message.Text == saveLocation {
+		return events.AskForPersistentLocation
 	}
 
 	return events.Message
