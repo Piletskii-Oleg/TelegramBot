@@ -39,7 +39,7 @@ func (p *Processor) DoCmd(event events.Event, meta telegram.Meta) error {
 	case StartCmd:
 		return p.sendHello(chatID)
 	default:
-		return p.Processor.Bot.SendMessage(chatID, msgUnknownCommand)
+		return p.Processor.Bot.SendMessage(chatID, msgUnknownCommand, []string{})
 	}
 }
 
@@ -98,16 +98,16 @@ func (p *Processor) sendRandom(chatID int, username string) (err error) {
 }
 
 func (p *Processor) sendHelp(chatID int) error {
-	return p.Processor.Bot.SendMessage(chatID, msgHelp)
+	return p.Processor.Bot.SendMessage(chatID, msgHelp, []string{})
 }
 
 func (p *Processor) sendHello(chatID int) error {
-	return p.Processor.Bot.SendMessage(chatID, msgHello)
+	return p.Processor.Bot.SendMessage(chatID, msgHello, []string{})
 }
 
 func NewMessageSender(chatID int, bot *bot.Bot) func(string) error {
 	return func(message string) error {
-		return bot.SendMessage(chatID, message)
+		return bot.SendMessage(chatID, message, []string{})
 	}
 }
 

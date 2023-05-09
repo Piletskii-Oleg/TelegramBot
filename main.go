@@ -14,12 +14,19 @@ const storageFolder = "storage"
 const batchSize = 100
 
 func main() {
-	tgToken := token("tg", "Telegram API token")
-	bot := tgBot.NewBot(tgToken, host)
+	info := map[string]string{
+		"tg":  "Telegram API token",
+		"omw": "Open weather map API token",
+	}
+	tokens := processTokens(info)
+	tgToken := tokens["tg"]
+	weatherToken := tokens["omw"]
+
+	bot := tgBot.NewBot(*tgToken, host)
 
 	//processor := telegram_storage.NewStorageProcessor(bot, files.NewFileStorage(storageFolder))
 
-	weather := weather2.NewClient(weatherToken)
+	weather := weather2.NewClient(*weatherToken)
 	weatherProcessor := sunny_day.NewWeatherProcessor(bot, *weather)
 	log.Print("service started")
 
@@ -31,13 +38,22 @@ func main() {
 	}
 }
 
-func token(name, usage string) string {
-	token := flag.String(name, "", usage)
-
-	flag.Parse()
-	if *token == "" {
-		log.Fatal("No token provided")
+func processTokens(info map[string]string) map[string]*string {
+	var tokens = make(map[string]*string, len(info))
+	for name, usage := range info {
+		tokens[name] = flag.String(name, "", usage)
 	}
 
-	return *token
+	flag.Parse()
+	for key, token := range tokens {
+		if *token == "" {
+			log.Fatal("token is not provided: ", key, " - ", info[key])
+		}
+	}
+
+	return tokens
+}
+
+type Token struct {
+	name, usage string
 }
