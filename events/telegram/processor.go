@@ -60,7 +60,7 @@ func event(upd bot.Update) events.Event {
 		Text: fetchText(upd),
 	}
 
-	if updateType == events.Message {
+	if updateType != events.Unknown {
 		res.Meta = Meta{
 			ChatID:   upd.Message.Chat.ID,
 			Username: upd.Message.From.Username,
@@ -80,6 +80,8 @@ func fetchText(upd bot.Update) string {
 func fetchType(upd bot.Update) events.Type {
 	if upd.Message == nil {
 		return events.Unknown
+	} else if upd.Message.Text == "location" {
+		return events.AskForLocation
 	}
 
 	return events.Message

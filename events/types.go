@@ -3,6 +3,8 @@ package events
 const (
 	Unknown Type = iota
 	Message
+	AskForLocation
+	ReceiveLocation
 )
 
 type Fetcher interface {
