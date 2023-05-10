@@ -5,7 +5,7 @@ import (
 	"telegramBot/bot/errors"
 	"telegramBot/events"
 	"telegramBot/events/telegram"
-	"telegramBot/storage/files"
+	"telegramBot/files"
 	"telegramBot/weather"
 )
 

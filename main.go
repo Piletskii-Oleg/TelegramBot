@@ -6,7 +6,7 @@ import (
 	tgBot "telegramBot/bot"
 	"telegramBot/consumer"
 	sunny_day "telegramBot/events/telegram/sunny-day"
-	"telegramBot/storage/files"
+	"telegramBot/files"
 	"telegramBot/weather"
 )
 

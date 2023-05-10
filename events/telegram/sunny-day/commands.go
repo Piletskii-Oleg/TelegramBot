@@ -4,7 +4,7 @@ import (
 	"log"
 	"strings"
 	"telegramBot/events"
-	"telegramBot/storage"
+	"telegramBot/files"
 )
 
 const (
@@ -63,7 +63,7 @@ func (p *Processor) confirmSaveLocation(chatID int) error {
 
 func (p *Processor) sendSavedLocationInfo(chatID int, username string) error {
 	loc, err := p.Storage.Location(username)
-	if err == storage.ErrNoSavedLocation {
+	if err == files.ErrNoSavedLocation {
 		return p.Processor.Bot.SendMessage(chatID, msgNoSavedLocation, defaultButtons)
 	} else if err != nil {
 		return err
