@@ -1,21 +1,8 @@
 package weather
 
-type GeocodingRequest struct {
-	Name  string `json:"q"`
-	Token string `json:"appid"`
-	Limit int    `json:"limit"` // up to 5
-}
-
 type GeocodingResponse struct {
 	Latitude  float64 `json:"lat"`
 	Longitude float64 `json:"lon"`
-}
-
-type LocationRequest struct {
-	Latitude  float64 `json:"lat"`
-	Longitude float64 `json:"lon"`
-	Token     string  `json:"appid"`
-	Units     string  `json:"units"`
 }
 
 type Response struct {

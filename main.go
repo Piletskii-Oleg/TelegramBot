@@ -6,36 +6,35 @@ import (
 	tgBot "telegramBot/bot"
 	"telegramBot/consumer"
 	sunny_day "telegramBot/events/telegram/sunny-day"
-	weather2 "telegramBot/weather"
+	"telegramBot/storage/files"
+	"telegramBot/weather"
 )
 
 const host = "api.telegram.org"
-const storageFolder = "storage"
 const batchSize = 100
 
 func main() {
 	info := map[string]string{
 		"tg":  "Telegram API token",
-		"omw": "Open weather map API token",
+		"owm": "Open weather map API token",
 	}
 	tokens := processTokens(info)
+
 	tgToken := tokens["tg"]
-	weatherToken := tokens["omw"]
+	weatherToken := tokens["owm"]
 
 	bot := tgBot.NewBot(*tgToken, host)
 
-	//processor := telegram_storage.NewStorageProcessor(bot, files.NewFileStorage(storageFolder))
+	fileStorage := files.NewFileStorage("location_files")
 
-	weather := weather2.NewClient(*weatherToken)
-	weatherProcessor := sunny_day.NewWeatherProcessor(bot, *weather)
-	log.Print("service started")
+	weatherClient := weather.NewClient(*weatherToken)
+	weatherProcessor := sunny_day.NewWeatherProcessor(bot, *weatherClient, *fileStorage)
 
 	eventConsumerWeather := consumer.NewEventConsumer(weatherProcessor, weatherProcessor, batchSize)
-	//eventConsumer := consumer.NewEventConsumer(processor, processor, batchSize)
-
 	if err := eventConsumerWeather.Start(); err != nil {
-		log.Fatal("service stopped", err)
+		log.Fatal("service cannot be started", err)
 	}
+	log.Print("service started")
 }
 
 func processTokens(info map[string]string) map[string]*string {
@@ -52,8 +51,4 @@ func processTokens(info map[string]string) map[string]*string {
 	}
 
 	return tokens
-}
-
-type Token struct {
-	name, usage string
 }

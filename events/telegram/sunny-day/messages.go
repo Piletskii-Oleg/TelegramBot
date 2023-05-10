@@ -1,9 +1,9 @@
 package sunny_day
 
-const msgHelp = "First, specify the location using 'location'." +
-	"Then, you can get the weather! Or change the location if you need."
+const msgHelp = "With me you can get weather information at the specified location, " +
+	"or save the location and then retrieve its info later. Use the buttons below to navigate."
 
-const msgHello = "Hi I can show weather in a given location, just tell me it! " + msgHelp
+const msgHello = "Hi!\n" + msgHelp
 
 const (
 	msgUnknownCommand  = "I cannot understand you :("

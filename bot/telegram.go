@@ -86,7 +86,7 @@ func makeButton(button string) KeyboardButton {
 
 func (bot *Bot) doRequest(query url.Values, method string) (content []byte, err error) {
 	defer func() {
-		errors.WrapIfError("unable to do request: %w", err)
+		err = errors.WrapIfError("unable to do request: %w", err)
 	}()
 
 	apiUrl := url.URL{
@@ -117,7 +117,7 @@ func (bot *Bot) doRequest(query url.Values, method string) (content []byte, err 
 
 func (bot *Bot) doMessageRequest(message Message, method string) (content []byte, err error) {
 	defer func() {
-		errors.WrapIfError("unable to do request: %w", err)
+		err = errors.WrapIfError("unable to do request: %w", err)
 	}()
 
 	apiUrl := url.URL{

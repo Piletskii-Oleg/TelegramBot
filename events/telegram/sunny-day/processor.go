@@ -5,8 +5,8 @@ import (
 	"telegramBot/bot/errors"
 	"telegramBot/events"
 	"telegramBot/events/telegram"
+	"telegramBot/storage/files"
 	"telegramBot/weather"
-	"time"
 )
 
 type Processor struct {
@@ -14,6 +14,8 @@ type Processor struct {
 	weather       weather.Client
 	States        States
 	SavedLocation string
+
+	Storage files.FileStorage
 }
 
 type States struct {
@@ -26,7 +28,7 @@ type Meta struct {
 	Username string
 }
 
-func NewWeatherProcessor(bot *bot.Bot, weather weather.Client) *Processor {
+func NewWeatherProcessor(bot *bot.Bot, weather weather.Client, storage files.FileStorage) *Processor {
 	return &Processor{
 		Processor: telegram.NewTelegramProcessor(bot),
 		weather:   weather,
@@ -34,6 +36,7 @@ func NewWeatherProcessor(bot *bot.Bot, weather weather.Client) *Processor {
 			AskedForLocation:           false,
 			AskedForPersistentLocation: false,
 		},
+		Storage: storage,
 	}
 }
 
@@ -96,15 +99,17 @@ func (p *Processor) processLocation(event events.Event) error {
 }
 
 func (p *Processor) sendLocationInfo(response *weather.Response, chatID int) error {
-	return p.Processor.Bot.SendMessage(chatID, time.Unix(response.Time, 0).String(), defaultButtons)
+	return p.Processor.Bot.SendMessage(chatID, locationInfo(response), defaultButtons)
 }
 
 func (p *Processor) saveLocation(event events.Event) error {
-	p.SavedLocation = event.Text
-
 	meta, err := meta(event)
 	if err != nil {
 		return errors.Wrap("can't process message", err)
+	}
+
+	if err := p.Storage.SaveLocation(meta.Username, event.Text); err != nil {
+		return errors.Wrap("can't save location", err)
 	}
 
 	if err := p.confirmSaveLocation(meta.ChatID); err != nil {
@@ -170,7 +175,7 @@ func fetchText(upd bot.Update) string {
 func fetchType(upd bot.Update) events.Type {
 	if upd.Message == nil {
 		return events.Unknown
-	} else if upd.Message.Text == location {
+	} else if upd.Message.Text == getLocation {
 		return events.AskForLocation
 	} else if upd.Message.Text == saveLocation {
 		return events.AskForPersistentLocation

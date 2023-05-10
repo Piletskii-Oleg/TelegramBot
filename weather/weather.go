@@ -16,15 +16,19 @@ const (
 	callAddress = "weather"
 )
 
+// Client is OpenWeatherMap client.
 type Client struct {
 	token  string
 	client http.Client
 }
 
+// NewClient makes a new OpenWeatherMap client using the token provided.
 func NewClient(token string) *Client {
 	return &Client{token: token, client: http.Client{}}
 }
 
+// MakeRequest calls OpenWeatherMap API to get weather data for the specified location
+// and returns the data.
 func (c *Client) MakeRequest(location string) (*Response, error) {
 	geo, err := c.makeGeoRequest(location)
 	if err != nil {
@@ -61,7 +65,7 @@ func (c *Client) MakeRequest(location string) (*Response, error) {
 
 func (c *Client) doRequest(query url.Values, url string) (content []byte, err error) {
 	defer func() {
-		errors.WrapIfError("unable to do request: %w", err)
+		err = errors.WrapIfError("unable to do request: %w", err)
 	}()
 
 	request, err := http.NewRequest(http.MethodGet, url, nil)
@@ -74,7 +78,9 @@ func (c *Client) doRequest(query url.Values, url string) (content []byte, err er
 	if err != nil {
 		return nil, errors.Wrap("unable to do request: %w", err)
 	}
-	defer response.Body.Close()
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(response.Body)
 
 	content, err = io.ReadAll(response.Body)
 	if err != nil {

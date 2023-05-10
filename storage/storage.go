@@ -10,6 +10,7 @@ import (
 )
 
 var ErrNoSavedPages = errors2.New("no saved pages")
+var ErrNoSavedLocation = errors2.New("no saved location")
 
 type Storage interface {
 	Save(page *Page) error
