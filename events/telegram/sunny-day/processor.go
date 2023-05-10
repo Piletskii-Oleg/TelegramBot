@@ -11,11 +11,11 @@ import (
 
 type Processor struct {
 	*telegram.Processor
-	weather       weather.Client
+	weather       *weather.Client
 	States        States
 	SavedLocation string
 
-	Storage files.FileStorage
+	Storage *files.FileStorage
 }
 
 type States struct {
@@ -28,7 +28,7 @@ type Meta struct {
 	Username string
 }
 
-func NewWeatherProcessor(bot *bot.Bot, weather weather.Client, storage files.FileStorage) *Processor {
+func NewWeatherProcessor(bot *bot.Bot, weather *weather.Client, storage *files.FileStorage) *Processor {
 	return &Processor{
 		Processor: telegram.NewTelegramProcessor(bot),
 		weather:   weather,
@@ -63,6 +63,26 @@ func (p *Processor) Process(event events.Event) error {
 	default:
 		return errors.Wrap("unknown event type", telegram.ErrUnknownEventType)
 	}
+}
+
+func (p *Processor) Fetch(limit int) ([]events.Event, error) {
+	updates, err := p.Bot.Updates(p.Offset, limit)
+	if err != nil {
+		return nil, errors.Wrap("can't get events", err)
+	}
+
+	if len(updates) == 0 {
+		return nil, nil
+	}
+
+	receivedEvents := make([]events.Event, 0, len(updates))
+	for _, upd := range updates {
+		receivedEvents = append(receivedEvents, event(upd))
+	}
+
+	p.Offset = updates[len(updates)-1].ID + 1
+
+	return receivedEvents, nil
 }
 
 func (p *Processor) processMessage(event events.Event) error {
@@ -126,26 +146,6 @@ func meta(event events.Event) (Meta, error) {
 	}
 
 	return result, nil
-}
-
-func (p *Processor) Fetch(limit int) ([]events.Event, error) {
-	updates, err := p.Bot.Updates(p.Offset, limit)
-	if err != nil {
-		return nil, errors.Wrap("can't get events", err)
-	}
-
-	if len(updates) == 0 {
-		return nil, nil
-	}
-
-	receivedEvents := make([]events.Event, 0, len(updates))
-	for _, upd := range updates {
-		receivedEvents = append(receivedEvents, event(upd))
-	}
-
-	p.Offset = updates[len(updates)-1].ID + 1
-
-	return receivedEvents, nil
 }
 
 func event(upd bot.Update) events.Event {

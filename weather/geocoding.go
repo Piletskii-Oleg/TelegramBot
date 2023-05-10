@@ -14,7 +14,9 @@ const (
 	geoCallAddress = "direct"
 )
 
-func (c *Client) makeGeoRequest(location string) ([]GeocodingResponse, error) {
+// MakeGeoRequest returns array of GeocodingResponse objects that contain
+// latitudes and longitudes of the locations that fit the name criterion
+func (c *Client) MakeGeoRequest(location string) ([]GeocodingResponse, error) {
 	values := url.Values{}
 	values.Add("q", location)
 	values.Add("appid", c.token)

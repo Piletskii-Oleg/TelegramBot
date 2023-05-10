@@ -18,17 +18,16 @@ func main() {
 		"tg":  "Telegram API token",
 		"owm": "Open weather map API token",
 	}
-	tokens := processTokens(info)
 
+	tokens := processTokens(info)
 	tgToken := tokens["tg"]
 	weatherToken := tokens["owm"]
 
-	bot := tgBot.NewBot(*tgToken, host)
-
-	fileStorage := files.NewFileStorage("location_files")
-
-	weatherClient := weather.NewClient(*weatherToken)
-	weatherProcessor := sunny_day.NewWeatherProcessor(bot, *weatherClient, *fileStorage)
+	weatherProcessor := sunny_day.NewWeatherProcessor(
+		tgBot.NewBot(*tgToken, host),
+		weather.NewClient(*weatherToken),
+		files.NewFileStorage("location_files"),
+	)
 
 	eventConsumerWeather := consumer.NewEventConsumer(weatherProcessor, weatherProcessor, batchSize)
 	if err := eventConsumerWeather.Start(); err != nil {

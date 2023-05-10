@@ -20,6 +20,7 @@ var (
 	locationButtons = []string{"Moscow", "Saint Petersburg", "Novosibirsk"}
 )
 
+// DoCmd processes default inputs from the user
 func (p *Processor) DoCmd(event events.Event, meta Meta) error {
 	text := event.Text
 	text = strings.TrimSpace(text)

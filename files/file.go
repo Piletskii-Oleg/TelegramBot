@@ -14,12 +14,14 @@ type FileStorage struct {
 	basePath string
 }
 
+// NewFileStorage returns a new instance of the FileStorage
 func NewFileStorage(basePath string) *FileStorage {
 	return &FileStorage{basePath: basePath}
 }
 
 const defaultPerm = 0774
 
+// SaveLocation saves user's location to the file /location_files/username
 func (fileStorage *FileStorage) SaveLocation(username string, location string) (err error) {
 	filePath := fileStorage.basePath
 	if err := os.MkdirAll(filePath, defaultPerm); err != nil {
@@ -60,6 +62,7 @@ func getFile(filePath string) (*os.File, error) {
 	}
 }
 
+// Location returns a location from /location_files/username
 func (fileStorage *FileStorage) Location(username string) (location *string, err error) {
 	defer func() {
 		err = errors.WrapIfError("can't retrieve location", err)

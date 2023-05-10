@@ -30,7 +30,7 @@ func NewClient(token string) *Client {
 // MakeRequest calls OpenWeatherMap API to get weather data for the specified location
 // and returns the data.
 func (c *Client) MakeRequest(location string) (*Response, error) {
-	geo, err := c.makeGeoRequest(location)
+	geo, err := c.MakeGeoRequest(location)
 	if err != nil {
 		return nil, err
 	}
